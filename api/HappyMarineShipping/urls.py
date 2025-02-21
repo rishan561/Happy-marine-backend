@@ -6,6 +6,8 @@ urlpatterns = [
  path('RegShipForSale',views.AddShip),
  path('viewShip',views.AllShips),
  path('single/<int:id>',views.SingleShip),
+ path('singleAmenity/<int:id>',views.SingleAmenity),
+
  path('updateShip/<int:id>',views.UpdateShip),
  path('deleteShip/<int:id>',views.DeleteShip),
  path('login',views.Login),
@@ -22,7 +24,11 @@ urlpatterns = [
  path('viewShipForEquipments',views.ViewShipForEquipments),
  path('deleteEquipments/<int:id>',views.DeleteShipForEquipments),
 
-
+ path('AddAmenities',views.AddAmenities),
+ path('viewAmenities',views.ViewAmenities),
+ path('deleteAmenities/<int:id>',views.DeleteAmenities),
+ path('updateAmenities/<int:id>',views.UpdateAmenities),
+  path('singleAm/<int:id>',views.SingleAm),
 
 
 

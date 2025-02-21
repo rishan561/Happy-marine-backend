@@ -42,6 +42,13 @@ class AdminRegisterShipForSale(models.Model):
     is_status=models.BooleanField(default=False)
     main_category = models.ForeignKey(Category,on_delete=models.CASCADE,null=True,blank=True)
     hidden_details = models.TextField(null=True,blank=True)
+    
+
+
+class Amenity(models.Model):
+    ship = models.ForeignKey(AdminRegisterShipForSale, on_delete=models.CASCADE, related_name='amenities')  # Ensure this field exists
+    name = models.CharField(max_length=100)
+    value = models.CharField(max_length=255)
 
 class RegisterShipForSale(models.Model): 
     title = models.CharField(max_length=100,null=True,blank=True)

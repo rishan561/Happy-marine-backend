@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from web.models import AdminRegisterShipForSale,CstmUser,Category,Sub_category,Amenities,RegisterShipForSale,RegisterShipForCharter,RegisterShipForEquipments
+from web.models import AdminRegisterShipForSale,CstmUser,Category,Sub_category,Amenities,RegisterShipForSale,RegisterShipForCharter,RegisterShipForEquipments,Amenity
 
 # Register your models here.
 
@@ -24,6 +24,10 @@ admin.site.register(Amenities,AmenitiesAdmin)
 class AdminRegShipForSaleAdmin(admin.ModelAdmin):
      list_display=['id','title','vessel_type','short_description','flag','year_built','capacity','LOA','Class','GRT_NRT','Teu','main_engine','DWT','Price','brief_description','email','phone','image','thumbnail_image','is_status','main_category','hidden_details']
 admin.site.register(AdminRegisterShipForSale,AdminRegShipForSaleAdmin)
+
+class AmenitYAdmin(admin.ModelAdmin):
+     list_display=['id','ship','name','value']
+admin.site.register(Amenity,AmenitYAdmin) 
 
 class RegShipForSaleAdmin(admin.ModelAdmin):
      list_display=['id','title','vessel_type','short_description','flag','year_built','capacity','LOA','Class','GRT_NRT','Teu','main_engine','DWT','Price','brief_description','email','phone','image','thumbnail_image','is_status','main_category']

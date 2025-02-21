@@ -6,8 +6,8 @@ from django.conf import settings
 import random
 from django.utils.timezone import now,localtime
 
-from .serializers import RegSgipForSaleSerializer,CategorySerializer,SubCategorySerializer,AmenitiesSerializer,RegisterShipForSaleSerializer,RegisterShipForCharterSerializer,RegisterShipForEquipmentsSerializer
-from web.models import AdminRegisterShipForSale,CstmUser,Category,Sub_category,Amenities,RegisterShipForSale,RegisterShipForCharter,RegisterShipForEquipments
+from .serializers import RegSgipForSaleSerializer,CategorySerializer,SubCategorySerializer,AmenitiesSerializer,RegisterShipForSaleSerializer,RegisterShipForCharterSerializer,RegisterShipForEquipmentsSerializer,AmenitYSerializer
+from web.models import AdminRegisterShipForSale,CstmUser,Category,Sub_category,Amenities,RegisterShipForSale,RegisterShipForCharter,RegisterShipForEquipments,Amenity
 
 
 from django.contrib.auth import authenticate
@@ -16,21 +16,37 @@ from rest_framework.authtoken.models import Token
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def AddShip(request):
-   data=request.data
-   ship=RegSgipForSaleSerializer(data=data)
-   print(data)
-   if ship.is_valid():
-        ship.save()
-        response_data={
-            "status":200,
-            "message":"Ship registered Successfully"
+    data = request.data
+    ship = RegSgipForSaleSerializer(data=data)
+    print(data)
+
+    # Extract amenities from the request
+    amenities_data = {
+        key.split("[")[1][:-1]: value[0]  # Extract the key inside brackets
+        for key, value in data.lists() if key.startswith('value[') and value[0]  # Skip empty values
+    }
+
+    if ship.is_valid():
+        saved_ship = ship.save()
+
+        # Save amenities if they have non-empty values
+        for name, value in amenities_data.items():
+            if value.strip():  # Ensure the value is not empty
+                Amenity.objects.create(ship=saved_ship, name=name, value=value)
+
+        response_data = {
+            "status": 200,
+            "message": "Ship registered successfully"
         }
-   else:
-       response_data={
-            "Status":201,
-            "message":"data not Added"
+    else:
+        print(ship.errors)
+        response_data = {
+            "status": 201,
+            "message": "Data not added",
+            "errors": ship.errors
         }
-   return Response(response_data)
+
+    return Response(response_data)
 
 
 @api_view(['POST'])
@@ -202,6 +218,58 @@ def SingleShip(request,id):
     if AdminRegisterShipForSale.objects.get(id=id):
       ship=AdminRegisterShipForSale.objects.get(id=id)
       serializer=RegSgipForSaleSerializer(instance=ship,context=context)
+      if serializer:
+            response_data={
+                "status":200,
+                "data":serializer.data
+            }
+      else:
+            response_data={
+                "status":201,
+                "message":"data not found"
+            }  
+    else:
+        response_data={
+                "status":201,
+                "message":f"Ship with id {id} does not exist"
+            }  
+    return Response(response_data)
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def SingleAmenity(request, id):
+    context = {"request": request}
+
+    # Get all amenities related to the ship
+    amenities = Amenity.objects.filter(ship_id=id)
+
+    if amenities.exists():
+        serializer = AmenitYSerializer(amenities, many=True, context=context)
+        response_data = {
+            "status": 200,
+            "data": serializer.data
+        }
+    else:
+        response_data = {
+            "status": 404,
+            "message": f"No amenities found for ship with id {id}"
+        }
+
+    return Response(response_data)
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def SingleAm(request,id):
+    context={
+        "request":request
+    }
+    if Amenities.objects.get(id=id):
+      ship=Amenities.objects.get(id=id)
+      serializer=AmenitiesSerializer(instance=ship,context=context)
       if serializer:
             response_data={
                 "status":200,
@@ -533,6 +601,89 @@ def DeleteShipForEquipments(request,id):
         response_data={
             "status":200,
             "message":"success"
+        }
+   else:
+       response_data={
+            "status":201,
+            "message":"data not found"
+        }
+   return Response(response_data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def AddAmenities(request):
+   data=request.data
+   ship=AmenitiesSerializer(data=data)
+   print(data)
+   if ship.is_valid():
+        ship.save()
+        response_data={
+            "status":200,
+            "message":"amenities registered Successfully"
+        }
+   else:
+       response_data={
+            "Status":201,
+            "message":"data not Added"
+        }
+   return Response(response_data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def ViewAmenities(request):
+    amenities=request.GET.get('amenities')
+    context={
+        "request":request
+    }
+    if amenities:
+        ships = Amenities.objects.filter(amenities__icontains=amenities)
+    else:
+        ships = Amenities.objects.all()  
+    serializer = AmenitiesSerializer(instance=ships, many=True,context=context)
+    if serializer:
+        response_data = {
+        "status": 200,
+        "data": serializer.data
+        }
+    else:
+            response_data = {
+            "Status": 201,
+            "message": "data not found",
+            }
+    return Response(response_data)
+
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+def DeleteAmenities(request,id):
+   category=Amenities.objects.get(id=id)
+   if category:
+        category.delete()
+        response_data={
+            "status":200,
+            "message":"success"
+        }
+   else:
+       response_data={
+            "status":201,
+            "message":"data not found"
+        }
+   return Response(response_data)
+
+
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def UpdateAmenities(request,id):
+   instance=Amenities.objects.get(id=id)
+   data=request.data
+   department=AmenitiesSerializer(instance=instance,data=data,partial=True)
+   if department.is_valid():
+        department.save()
+        response_data={
+            "status":200,
+            "message":"Updated Successfully"
         }
    else:
        response_data={
