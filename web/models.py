@@ -5,6 +5,9 @@ class CstmUser(AbstractUser):
     phone=models.DecimalField(decimal_places=0,max_digits=10,null=True)
     image=models.ImageField(upload_to='user_image',blank=True,null=True)
     address=models.TextField(null=True,blank=True)
+    company_name = models.CharField(max_length=100,null=True,blank=True)
+
+
 
 class Category(models.Model):
     category_name = models.CharField(max_length=100)

@@ -5,7 +5,7 @@ from web.models import AdminRegisterShipForSale,CstmUser,Category,Sub_category,A
 # Register your models here.
 
 class CustomAdmin(UserAdmin):
-    list_display=['id','username','email','first_name','last_name','phone','image','is_active','address']
+    list_display=['id','username','email','first_name','last_name','phone','image','is_active','address','company_name']
 admin.site.register(CstmUser,CustomAdmin)
 
 class CategoryAdmin(admin.ModelAdmin):

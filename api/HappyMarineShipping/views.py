@@ -516,29 +516,60 @@ def DeleteSubCat(request,id):
 
 @api_view(['PUT'])
 @permission_classes([AllowAny])
-def UpdateShip(request,id):
-   instance=AdminRegisterShipForSale.objects.get(id=id)
-   data=request.data
-   if data['image']=="":
-       data=request.data.copy()
-       data['image']=instance.image
-   if data['thumbnail_image']=="":
-       data=request.data.copy()
-       data['thumbnail_image']=instance.thumbnail_image
-       
-   department=RegSgipForSaleSerializer(instance=instance,data=data,partial=True)
-   if department.is_valid():
-        department.save()
-        response_data={
-            "status":200,
-            "message":"Updated Successfully"
+def UpdateShip(request, id):
+    try:
+        # Get the ship instance
+        instance = AdminRegisterShipForSale.objects.get(id=id)
+        data = request.data.copy()  # ✅ Make a single mutable copy
+
+        # ✅ Handle empty image and thumbnail_image
+        if data.get('image') == "" and instance.image:
+            data['image'] = instance.image  # Keep current image
+
+        if data.get('thumbnail_image') == "" and instance.thumbnail_image:
+            data['thumbnail_image'] = instance.thumbnail_image  # Keep current thumbnail image
+
+        # Deserialize and update ship
+        department = RegSgipForSaleSerializer(instance=instance, data=data, partial=True)
+
+        if department.is_valid():
+            department.save()
+
+            # ✅ Extract amenities data from request
+            amenities_data = {
+                key.split("[")[1][:-1]: value[0]  # Extract name from "value[name]"
+                for key, value in data.lists() if key.startswith('value[') and value[0]
+            }
+
+            # ✅ Update or create amenities
+            for name, value in amenities_data.items():
+                if value.strip():  # Ensure value is not empty
+                    Amenity.objects.update_or_create(
+                        ship=instance,
+                        name=name,
+                        defaults={'value': value}
+                    )
+
+            response_data = {
+                "status": 200,
+                "message": "Updated Successfully"
+            }
+        else:
+            response_data = {
+                "status": 201,
+                "message": "Data not found",
+                "errors": department.errors
+            }
+
+    except AdminRegisterShipForSale.DoesNotExist:
+        response_data = {
+            "status": 404,
+            "message": "Ship not found"
         }
-   else:
-       response_data={
-            "status":201,
-            "message":"data not found"
-        }
-   return Response(response_data)
+
+    return Response(response_data)
+
+    return Response(response_data)
 
 
 @api_view(['DELETE'])
