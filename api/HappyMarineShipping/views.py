@@ -6,8 +6,9 @@ from django.conf import settings
 import random
 from django.utils.timezone import now,localtime
 
-from .serializers import RegSgipForSaleSerializer,CategorySerializer,SubCategorySerializer,AmenitiesSerializer,RegisterShipForSaleSerializer,RegisterShipForCharterSerializer,RegisterShipForEquipmentsSerializer,AmenitYSerializer
+from .serializers import RegSgipForSaleSerializer,CategorySerializer,SubCategorySerializer,AmenitiesSerializer,RegisterShipForSaleSerializer,RegisterShipForCharterSerializer,RegisterShipForEquipmentsSerializer,AmenitYSerializer,userSerializer
 from web.models import AdminRegisterShipForSale,CstmUser,Category,Sub_category,Amenities,RegisterShipForSale,RegisterShipForCharter,RegisterShipForEquipments,Amenity
+from django.contrib.auth.hashers import make_password
 
 
 from django.contrib.auth import authenticate
@@ -722,3 +723,163 @@ def UpdateAmenities(request,id):
             "message":"data not found"
         }
    return Response(response_data)
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_admin_user(request):
+    try:
+        admin_user = CstmUser.objects.filter(is_superuser=True).first()  # Use this or role='admin'
+        if admin_user:
+            serializer = userSerializer(admin_user)
+            return Response({"status": 200, "data": serializer.data})
+        else:
+            return Response({"status": 404, "message": "Admin user not found"})
+    except Exception as e:
+        return Response({"status": 500, "message": str(e)})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def SingleAdmin(request,id):
+    context={
+        "request":request
+    }
+    if CstmUser.objects.get(id=id):
+      ship=CstmUser.objects.get(id=id)
+      serializer=userSerializer(instance=ship,context=context)
+      if serializer:
+            response_data={
+                "status":200,
+                "data":serializer.data
+            }
+      else:
+            response_data={
+                "status":201,
+                "message":"data not found"
+            }  
+    else:
+        response_data={
+                "status":201,
+                "message":f"Ship with id {id} does not exist"
+            }  
+    return Response(response_data)
+
+
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def UpdateUser(request):
+    # Get the user from the token
+    instance = request.user
+    data = request.data.copy()
+
+    # Update image from FILES if provided
+    if 'image' in request.FILES:
+        instance.image = request.FILES['image']
+
+    # Update other fields
+    instance.company_name = data.get('company_name', instance.company_name)
+    instance.email = data.get('email', instance.email)
+    instance.phone = data.get('phone', instance.phone)
+    instance.address = data.get('address', instance.address)
+
+    # Handle password change if provided
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+
+    if old_password and new_password:
+        if instance.check_password(old_password):
+            instance.set_password(new_password)
+        else:
+            return Response({
+                "status": 401,
+                "message": "Old password is not correct."
+            }, status=401)
+
+    instance.save()
+
+    response_data = {
+        "status": status.HTTP_200_OK,
+        "message": "User updated successfully",
+        "data": {
+            "company_name": instance.company_name,
+            "email": instance.email,
+            "phone": instance.phone,
+            "address": instance.address,
+            "image": str(instance.image.url) if instance.image else None
+        }
+    }
+
+    return Response(response_data, status=status.HTTP_200_OK)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def ChangepassA(request):
+    user = request.user
+    old_password = request.data.get('old_password')
+    new_password = request.data.get('new_password')
+
+    if not old_password or not new_password:
+        return Response({
+            'status': 400,
+            'message': 'Both old and new passwords are required.'
+        }, status=400)
+
+    if user.check_password(old_password):
+        user.set_password(new_password)
+        user.save()
+        return Response({
+            'status': 200,
+            'message': 'Password changed successfully.'
+        })
+    else:
+        return Response({
+            'status': 401,
+            'message': 'Old password is not correct.'
+        }, status=401)
+
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def StatusU(request,id):
+    instance=AdminRegisterShipForSale.objects.get(id=id)
+
+    status=RegSgipForSaleSerializer(instance,data={'is_status':True},partial=True)
+    if status.is_valid():
+        status.save()
+        response_data={
+            "status":200,
+            "message":'success'
+        }
+    else:
+        response_data={
+            "status":201,
+            "message":"error"
+        }
+    return Response(response_data)  
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def StatusD(request,id):
+    instance=AdminRegisterShipForSale.objects.get(id=id)
+
+    status=RegSgipForSaleSerializer(instance,data={'is_status':False},partial=True)
+    if status.is_valid():
+        status.save()
+        response_data={
+            "status":200,
+            "message":'success'
+        }
+    else:
+        response_data={
+            "status":201,
+            "message":"error"
+        }
+    return Response(response_data)  

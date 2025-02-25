@@ -43,6 +43,17 @@ urlpatterns = [
  path('singleSubCat/<int:id>',views.SingleSubCat),
  path('deleteSubCategory/<int:id>',views.DeleteSubCat),
 
+ path('users/admin',views.get_admin_user),
+ path('singleAdmin',views.SingleAdmin),
+ path('users/admin/update',views.UpdateUser),
+ path('changePassA',views.ChangepassA),
+
+
+ path('status/update/<int:id>',views.StatusU),
+ path('statusD/update/<int:id>',views.StatusD),
+
+
+
 
 
 
